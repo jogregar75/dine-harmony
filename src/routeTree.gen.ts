@@ -9,38 +9,138 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedMesasRouteImport } from './routes/_authenticated/mesas'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
+import { Route as AuthenticatedCartaRouteImport } from './routes/_authenticated/carta'
+import { Route as AuthenticatedPedidosTableIdRouteImport } from './routes/_authenticated/pedidos.$tableId'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedMesasRoute = AuthenticatedMesasRouteImport.update({
+  id: '/mesas',
+  path: '/mesas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCocinaRoute = AuthenticatedCocinaRouteImport.update({
+  id: '/cocina',
+  path: '/cocina',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCartaRoute = AuthenticatedCartaRouteImport.update({
+  id: '/carta',
+  path: '/carta',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPedidosTableIdRoute =
+  AuthenticatedPedidosTableIdRouteImport.update({
+    id: '/pedidos/$tableId',
+    path: '/pedidos/$tableId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/carta': typeof AuthenticatedCartaRoute
+  '/cocina': typeof AuthenticatedCocinaRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/mesas': typeof AuthenticatedMesasRoute
+  '/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/carta': typeof AuthenticatedCartaRoute
+  '/cocina': typeof AuthenticatedCocinaRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/mesas': typeof AuthenticatedMesasRoute
+  '/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/carta': typeof AuthenticatedCartaRoute
+  '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/mesas': typeof AuthenticatedMesasRoute
+  '/_authenticated/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/carta'
+    | '/cocina'
+    | '/dashboard'
+    | '/mesas'
+    | '/pedidos/$tableId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/carta'
+    | '/cocina'
+    | '/dashboard'
+    | '/mesas'
+    | '/pedidos/$tableId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/carta'
+    | '/_authenticated/cocina'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/mesas'
+    | '/_authenticated/pedidos/$tableId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +148,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mesas': {
+      id: '/_authenticated/mesas'
+      path: '/mesas'
+      fullPath: '/mesas'
+      preLoaderRoute: typeof AuthenticatedMesasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cocina': {
+      id: '/_authenticated/cocina'
+      path: '/cocina'
+      fullPath: '/cocina'
+      preLoaderRoute: typeof AuthenticatedCocinaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/carta': {
+      id: '/_authenticated/carta'
+      path: '/carta'
+      fullPath: '/carta'
+      preLoaderRoute: typeof AuthenticatedCartaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pedidos/$tableId': {
+      id: '/_authenticated/pedidos/$tableId'
+      path: '/pedidos/$tableId'
+      fullPath: '/pedidos/$tableId'
+      preLoaderRoute: typeof AuthenticatedPedidosTableIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCartaRoute: typeof AuthenticatedCartaRoute
+  AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedMesasRoute: typeof AuthenticatedMesasRoute
+  AuthenticatedPedidosTableIdRoute: typeof AuthenticatedPedidosTableIdRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCartaRoute: AuthenticatedCartaRoute,
+  AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedMesasRoute: AuthenticatedMesasRoute,
+  AuthenticatedPedidosTableIdRoute: AuthenticatedPedidosTableIdRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

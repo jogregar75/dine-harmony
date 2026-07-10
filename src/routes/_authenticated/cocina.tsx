@@ -59,10 +59,15 @@ function CocinaPage() {
   }, {});
 
   async function updateStatus(id: string, status: KItem["status"]) {
-    const patch: Record<string, unknown> = { status };
-    if (status === "ready") patch.ready_at = new Date().toISOString();
-    if (status === "delivered") patch.delivered_at = new Date().toISOString();
-    await supabase.from("order_items").update(patch).eq("id", id);
+    const now = new Date().toISOString();
+    await supabase
+      .from("order_items")
+      .update({
+        status,
+        ready_at: status === "ready" ? now : undefined,
+        delivered_at: status === "delivered" ? now : undefined,
+      })
+      .eq("id", id);
   }
 
   return (
