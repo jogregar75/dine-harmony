@@ -293,7 +293,7 @@ function CartaPage() {
                   </span>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => setEditing(p)}>
+                  <Button size="icon" variant="ghost" onClick={() => openEditor(p)}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => deleteProduct(p.id)}>
