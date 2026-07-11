@@ -44,12 +44,33 @@ type Product = {
   available: boolean;
 };
 
+type Unit = "g" | "kg" | "ml" | "l" | "u";
+type Ingredient = { id: string; name: string; unit: Unit; stock: number };
+type RecipeItem = {
+  id?: string;
+  ingredient_id: string;
+  quantity: number;
+  unit: Unit;
+  optional: boolean;
+};
+
+const UNITS: Unit[] = ["g", "kg", "ml", "l", "u"];
+
 function CartaPage() {
   const qc = useQueryClient();
   const [activeCat, setActiveCat] = useState<string | "all">("all");
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
+  const [recipe, setRecipe] = useState<RecipeItem[]>([]);
   const [newCatOpen, setNewCatOpen] = useState(false);
   const [catName, setCatName] = useState("");
+
+  const { data: ingredients = [] } = useQuery({
+    queryKey: ["ingredients"],
+    queryFn: async () => {
+      const { data } = await supabase.from("ingredients").select("id,name,unit,stock").order("name");
+      return (data ?? []) as Ingredient[];
+    },
+  });
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
