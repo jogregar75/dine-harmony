@@ -427,6 +427,79 @@ function CartaPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Receta / ingredientes */}
+              <div className="border-t border-border/40 pt-3 mt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label className="text-base">Ingredientes de la receta</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Qué lleva el producto. Marcá "opcional" para ingredientes que el cliente puede quitar (ej. cebolla).
+                    </p>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={addRecipeRow}>
+                    <Plus className="w-3.5 h-3.5" /> Agregar
+                  </Button>
+                </div>
+                {ingredients.length === 0 && (
+                  <div className="text-xs text-muted-foreground p-3 rounded-lg bg-muted/30">
+                    No hay ingredientes cargados todavía. Andá a <strong>Ingredientes</strong> para crearlos.
+                  </div>
+                )}
+                {recipe.length === 0 && ingredients.length > 0 && (
+                  <div className="text-xs text-muted-foreground p-3 rounded-lg bg-muted/30">
+                    Este producto todavía no tiene ingredientes asignados.
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {recipe.map((r, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_90px_80px_auto_auto] gap-2 items-center">
+                      <Select
+                        value={r.ingredient_id}
+                        onValueChange={(v) => {
+                          const ing = ingredients.find((i) => i.id === v);
+                          updateRecipeRow(idx, { ingredient_id: v, unit: ing?.unit ?? r.unit });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ingredients.map((i) => (
+                            <SelectItem
+                              key={i.id}
+                              value={i.id}
+                              disabled={recipe.some((x, xi) => xi !== idx && x.ingredient_id === i.id)}
+                            >
+                              {i.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        value={r.quantity}
+                        onChange={(e) => updateRecipeRow(idx, { quantity: Number(e.target.value) })}
+                      />
+                      <Select value={r.unit} onValueChange={(v) => updateRecipeRow(idx, { unit: v as Unit })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <label className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+                        <Switch
+                          checked={r.optional}
+                          onCheckedChange={(v) => updateRecipeRow(idx, { optional: v })}
+                        />
+                        Opcional
+                      </label>
+                      <Button type="button" size="icon" variant="ghost" onClick={() => removeRecipeRow(idx)}>
+                        <X className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
