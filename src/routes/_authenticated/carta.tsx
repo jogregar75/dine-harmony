@@ -328,8 +328,8 @@ function CartaPage() {
       </Dialog>
 
       {/* Diálogo Producto */}
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setRecipe([]); } }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing?.id ? "Editar producto" : "Nuevo producto"}</DialogTitle>
           </DialogHeader>
