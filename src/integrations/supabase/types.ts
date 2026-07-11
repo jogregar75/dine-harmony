@@ -77,6 +77,53 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredients: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          min_stock: number
+          name: string
+          notes: string | null
+          stock: number
+          supplier_id: string | null
+          unit: Database["public"]["Enums"]["ingredient_unit"]
+          updated_at: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          min_stock?: number
+          name: string
+          notes?: string | null
+          stock?: number
+          supplier_id?: string | null
+          unit?: Database["public"]["Enums"]["ingredient_unit"]
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          min_stock?: number
+          name?: string
+          notes?: string | null
+          stock?: number
+          supplier_id?: string | null
+          unit?: Database["public"]["Enums"]["ingredient_unit"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -198,6 +245,51 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "restaurant_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          optional: boolean
+          product_id: string
+          quantity: number
+          unit: Database["public"]["Enums"]["ingredient_unit"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          optional?: boolean
+          product_id: string
+          quantity?: number
+          unit: Database["public"]["Enums"]["ingredient_unit"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          optional?: boolean
+          product_id?: string
+          quantity?: number
+          unit?: Database["public"]["Enums"]["ingredient_unit"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_ingredients_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -324,6 +416,36 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -361,6 +483,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "encargado" | "mozo" | "caja" | "cocina"
+      ingredient_unit: "g" | "kg" | "ml" | "l" | "u"
       item_status: "pending" | "preparing" | "ready" | "delivered" | "cancelled"
       order_status: "open" | "sent" | "paid" | "cancelled"
       order_type: "dine_in" | "takeaway" | "delivery"
@@ -494,6 +617,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "encargado", "mozo", "caja", "cocina"],
+      ingredient_unit: ["g", "kg", "ml", "l", "u"],
       item_status: ["pending", "preparing", "ready", "delivered", "cancelled"],
       order_status: ["open", "sent", "paid", "cancelled"],
       order_type: ["dine_in", "takeaway", "delivery"],
