@@ -216,7 +216,7 @@ function CartaPage() {
           </Button>
           <Button
             onClick={() =>
-              setEditing({
+              openEditor({
                 name: "",
                 price: 0,
                 tax_rate: 21,
