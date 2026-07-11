@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ImagePlus } from "lucide-react";
+import { Plus, Pencil, Trash2, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { money } from "@/lib/format";
 
@@ -44,12 +44,33 @@ type Product = {
   available: boolean;
 };
 
+type Unit = "g" | "kg" | "ml" | "l" | "u";
+type Ingredient = { id: string; name: string; unit: Unit; stock: number };
+type RecipeItem = {
+  id?: string;
+  ingredient_id: string;
+  quantity: number;
+  unit: Unit;
+  optional: boolean;
+};
+
+const UNITS: Unit[] = ["g", "kg", "ml", "l", "u"];
+
 function CartaPage() {
   const qc = useQueryClient();
   const [activeCat, setActiveCat] = useState<string | "all">("all");
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
+  const [recipe, setRecipe] = useState<RecipeItem[]>([]);
   const [newCatOpen, setNewCatOpen] = useState(false);
   const [catName, setCatName] = useState("");
+
+  const { data: ingredients = [] } = useQuery({
+    queryKey: ["ingredients"],
+    queryFn: async () => {
+      const { data } = await supabase.from("ingredients").select("id,name,unit,stock").order("name");
+      return (data ?? []) as Ingredient[];
+    },
+  });
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -84,6 +105,27 @@ function CartaPage() {
     qc.invalidateQueries({ queryKey: ["categories"] });
   }
 
+  async function openEditor(p: Partial<Product> | null) {
+    setEditing(p);
+    if (p?.id) {
+      const { data } = await supabase
+        .from("product_ingredients")
+        .select("id,ingredient_id,quantity,unit,optional")
+        .eq("product_id", p.id);
+      setRecipe(
+        (data ?? []).map((r) => ({
+          id: r.id,
+          ingredient_id: r.ingredient_id,
+          quantity: Number(r.quantity),
+          unit: r.unit as Unit,
+          optional: r.optional,
+        }))
+      );
+    } else {
+      setRecipe([]);
+    }
+  }
+
   async function saveProduct(p: Partial<Product>) {
     const payload = {
       category_id: p.category_id ?? null,
@@ -96,16 +138,45 @@ function CartaPage() {
       prep_time_minutes: Number(p.prep_time_minutes ?? 10),
       available: p.available ?? true,
     };
-    if (p.id) {
-      const { error } = await supabase.from("products").update(payload).eq("id", p.id);
+    let productId = p.id;
+    if (productId) {
+      const { error } = await supabase.from("products").update(payload).eq("id", productId);
       if (error) return toast.error(error.message);
     } else {
-      const { error } = await supabase.from("products").insert(payload);
+      const { data, error } = await supabase.from("products").insert(payload).select("id").single();
       if (error) return toast.error(error.message);
+      productId = data!.id;
+    }
+    // Reemplazar receta completa
+    await supabase.from("product_ingredients").delete().eq("product_id", productId!);
+    const valid = recipe.filter((r) => r.ingredient_id && Number(r.quantity) > 0);
+    if (valid.length) {
+      const rows = valid.map((r) => ({
+        product_id: productId!,
+        ingredient_id: r.ingredient_id,
+        quantity: Number(r.quantity),
+        unit: r.unit,
+        optional: r.optional,
+      }));
+      const { error } = await supabase.from("product_ingredients").insert(rows);
+      if (error) return toast.error(`Producto guardado, pero falló la receta: ${error.message}`);
     }
     toast.success("Producto guardado");
     setEditing(null);
+    setRecipe([]);
     qc.invalidateQueries({ queryKey: ["products"] });
+  }
+
+  function addRecipeRow() {
+    const first = ingredients.find((i) => !recipe.some((r) => r.ingredient_id === i.id));
+    if (!first) return toast.info("No hay más ingredientes para agregar");
+    setRecipe([...recipe, { ingredient_id: first.id, quantity: 1, unit: first.unit, optional: false }]);
+  }
+  function updateRecipeRow(idx: number, patch: Partial<RecipeItem>) {
+    setRecipe(recipe.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+  function removeRecipeRow(idx: number) {
+    setRecipe(recipe.filter((_, i) => i !== idx));
   }
 
   async function deleteProduct(id: string) {
@@ -145,7 +216,7 @@ function CartaPage() {
           </Button>
           <Button
             onClick={() =>
-              setEditing({
+              openEditor({
                 name: "",
                 price: 0,
                 tax_rate: 21,
@@ -222,7 +293,7 @@ function CartaPage() {
                   </span>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => setEditing(p)}>
+                  <Button size="icon" variant="ghost" onClick={() => openEditor(p)}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => deleteProduct(p.id)}>
@@ -257,8 +328,8 @@ function CartaPage() {
       </Dialog>
 
       {/* Diálogo Producto */}
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setRecipe([]); } }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing?.id ? "Editar producto" : "Nuevo producto"}</DialogTitle>
           </DialogHeader>
@@ -354,6 +425,79 @@ function CartaPage() {
                       }}
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Receta / ingredientes */}
+              <div className="border-t border-border/40 pt-3 mt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label className="text-base">Ingredientes de la receta</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Qué lleva el producto. Marcá "opcional" para ingredientes que el cliente puede quitar (ej. cebolla).
+                    </p>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={addRecipeRow}>
+                    <Plus className="w-3.5 h-3.5" /> Agregar
+                  </Button>
+                </div>
+                {ingredients.length === 0 && (
+                  <div className="text-xs text-muted-foreground p-3 rounded-lg bg-muted/30">
+                    No hay ingredientes cargados todavía. Andá a <strong>Ingredientes</strong> para crearlos.
+                  </div>
+                )}
+                {recipe.length === 0 && ingredients.length > 0 && (
+                  <div className="text-xs text-muted-foreground p-3 rounded-lg bg-muted/30">
+                    Este producto todavía no tiene ingredientes asignados.
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {recipe.map((r, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_90px_80px_auto_auto] gap-2 items-center">
+                      <Select
+                        value={r.ingredient_id}
+                        onValueChange={(v) => {
+                          const ing = ingredients.find((i) => i.id === v);
+                          updateRecipeRow(idx, { ingredient_id: v, unit: ing?.unit ?? r.unit });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ingredients.map((i) => (
+                            <SelectItem
+                              key={i.id}
+                              value={i.id}
+                              disabled={recipe.some((x, xi) => xi !== idx && x.ingredient_id === i.id)}
+                            >
+                              {i.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        value={r.quantity}
+                        onChange={(e) => updateRecipeRow(idx, { quantity: Number(e.target.value) })}
+                      />
+                      <Select value={r.unit} onValueChange={(v) => updateRecipeRow(idx, { unit: v as Unit })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <label className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+                        <Switch
+                          checked={r.optional}
+                          onCheckedChange={(v) => updateRecipeRow(idx, { optional: v })}
+                        />
+                        Opcional
+                      </label>
+                      <Button type="button" size="icon" variant="ghost" onClick={() => removeRecipeRow(idx)}>
+                        <X className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

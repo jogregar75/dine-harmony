@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedMesasRouteImport } from './routes/_authenticated/mesas'
+import { Route as AuthenticatedIngredientesRouteImport } from './routes/_authenticated/ingredientes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
 import { Route as AuthenticatedCartaRouteImport } from './routes/_authenticated/carta'
@@ -37,6 +38,12 @@ const AuthenticatedMesasRoute = AuthenticatedMesasRouteImport.update({
   path: '/mesas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIngredientesRoute =
+  AuthenticatedIngredientesRouteImport.update({
+    id: '/ingredientes',
+    path: '/ingredientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/carta': typeof AuthenticatedCartaRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/ingredientes': typeof AuthenticatedIngredientesRoute
   '/mesas': typeof AuthenticatedMesasRoute
   '/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
   '/carta': typeof AuthenticatedCartaRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/ingredientes': typeof AuthenticatedIngredientesRoute
   '/mesas': typeof AuthenticatedMesasRoute
   '/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
@@ -85,6 +94,7 @@ export interface FileRoutesById {
   '/_authenticated/carta': typeof AuthenticatedCartaRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/ingredientes': typeof AuthenticatedIngredientesRoute
   '/_authenticated/mesas': typeof AuthenticatedMesasRoute
   '/_authenticated/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/carta'
     | '/cocina'
     | '/dashboard'
+    | '/ingredientes'
     | '/mesas'
     | '/pedidos/$tableId'
   fileRoutesByTo: FileRoutesByTo
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/carta'
     | '/cocina'
     | '/dashboard'
+    | '/ingredientes'
     | '/mesas'
     | '/pedidos/$tableId'
   id:
@@ -115,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carta'
     | '/_authenticated/cocina'
     | '/_authenticated/dashboard'
+    | '/_authenticated/ingredientes'
     | '/_authenticated/mesas'
     | '/_authenticated/pedidos/$tableId'
   fileRoutesById: FileRoutesById
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMesasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ingredientes': {
+      id: '/_authenticated/ingredientes'
+      path: '/ingredientes'
+      fullPath: '/ingredientes'
+      preLoaderRoute: typeof AuthenticatedIngredientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -190,6 +210,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCartaRoute: typeof AuthenticatedCartaRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedIngredientesRoute: typeof AuthenticatedIngredientesRoute
   AuthenticatedMesasRoute: typeof AuthenticatedMesasRoute
   AuthenticatedPedidosTableIdRoute: typeof AuthenticatedPedidosTableIdRoute
 }
@@ -198,6 +219,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCartaRoute: AuthenticatedCartaRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedIngredientesRoute: AuthenticatedIngredientesRoute,
   AuthenticatedMesasRoute: AuthenticatedMesasRoute,
   AuthenticatedPedidosTableIdRoute: AuthenticatedPedidosTableIdRoute,
 }
@@ -213,13 +235,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
