@@ -105,6 +105,27 @@ function CartaPage() {
     qc.invalidateQueries({ queryKey: ["categories"] });
   }
 
+  async function openEditor(p: Partial<Product> | null) {
+    setEditing(p);
+    if (p?.id) {
+      const { data } = await supabase
+        .from("product_ingredients")
+        .select("id,ingredient_id,quantity,unit,optional")
+        .eq("product_id", p.id);
+      setRecipe(
+        (data ?? []).map((r) => ({
+          id: r.id,
+          ingredient_id: r.ingredient_id,
+          quantity: Number(r.quantity),
+          unit: r.unit as Unit,
+          optional: r.optional,
+        }))
+      );
+    } else {
+      setRecipe([]);
+    }
+  }
+
   async function saveProduct(p: Partial<Product>) {
     const payload = {
       category_id: p.category_id ?? null,
@@ -117,16 +138,45 @@ function CartaPage() {
       prep_time_minutes: Number(p.prep_time_minutes ?? 10),
       available: p.available ?? true,
     };
-    if (p.id) {
-      const { error } = await supabase.from("products").update(payload).eq("id", p.id);
+    let productId = p.id;
+    if (productId) {
+      const { error } = await supabase.from("products").update(payload).eq("id", productId);
       if (error) return toast.error(error.message);
     } else {
-      const { error } = await supabase.from("products").insert(payload);
+      const { data, error } = await supabase.from("products").insert(payload).select("id").single();
       if (error) return toast.error(error.message);
+      productId = data!.id;
+    }
+    // Reemplazar receta completa
+    await supabase.from("product_ingredients").delete().eq("product_id", productId!);
+    const valid = recipe.filter((r) => r.ingredient_id && Number(r.quantity) > 0);
+    if (valid.length) {
+      const rows = valid.map((r) => ({
+        product_id: productId!,
+        ingredient_id: r.ingredient_id,
+        quantity: Number(r.quantity),
+        unit: r.unit,
+        optional: r.optional,
+      }));
+      const { error } = await supabase.from("product_ingredients").insert(rows);
+      if (error) return toast.error(`Producto guardado, pero falló la receta: ${error.message}`);
     }
     toast.success("Producto guardado");
     setEditing(null);
+    setRecipe([]);
     qc.invalidateQueries({ queryKey: ["products"] });
+  }
+
+  function addRecipeRow() {
+    const first = ingredients.find((i) => !recipe.some((r) => r.ingredient_id === i.id));
+    if (!first) return toast.info("No hay más ingredientes para agregar");
+    setRecipe([...recipe, { ingredient_id: first.id, quantity: 1, unit: first.unit, optional: false }]);
+  }
+  function updateRecipeRow(idx: number, patch: Partial<RecipeItem>) {
+    setRecipe(recipe.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+  function removeRecipeRow(idx: number) {
+    setRecipe(recipe.filter((_, i) => i !== idx));
   }
 
   async function deleteProduct(id: string) {
