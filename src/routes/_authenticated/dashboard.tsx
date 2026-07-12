@@ -10,6 +10,7 @@ import {
   Clock,
   ChefHat,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
