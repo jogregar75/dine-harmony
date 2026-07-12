@@ -58,6 +58,7 @@ type OrderItem = {
   tax_rate: number;
   status: "pending" | "preparing" | "ready" | "delivered" | "cancelled";
   notes: string | null;
+  modifiers_total: number;
 };
 type Order = {
   id: string;
