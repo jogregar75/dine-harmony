@@ -416,6 +416,54 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          ingredient_id: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          note: string | null
+          order_item_id: string | null
+          qty: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingredient_id: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          note?: string | null
+          order_item_id?: string | null
+          qty: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingredient_id?: string
+          movement_type?: Database["public"]["Enums"]["stock_movement_type"]
+          note?: string | null
+          order_item_id?: string | null
+          qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           created_at: string
@@ -472,6 +520,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_stock_for_item: {
+        Args: { _item_id: string; _qty: number; _reverse: boolean }
+        Returns: undefined
+      }
+      convert_unit: {
+        Args: {
+          _from: Database["public"]["Enums"]["ingredient_unit"]
+          _qty: number
+          _to: Database["public"]["Enums"]["ingredient_unit"]
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -487,6 +547,7 @@ export type Database = {
       item_status: "pending" | "preparing" | "ready" | "delivered" | "cancelled"
       order_status: "open" | "sent" | "paid" | "cancelled"
       order_type: "dine_in" | "takeaway" | "delivery"
+      stock_movement_type: "sale" | "purchase" | "adjustment" | "return"
       table_shape: "square" | "round" | "rectangle"
       table_status: "free" | "occupied" | "reserved" | "cleaning"
     }
@@ -621,6 +682,7 @@ export const Constants = {
       item_status: ["pending", "preparing", "ready", "delivered", "cancelled"],
       order_status: ["open", "sent", "paid", "cancelled"],
       order_type: ["dine_in", "takeaway", "delivery"],
+      stock_movement_type: ["sale", "purchase", "adjustment", "return"],
       table_shape: ["square", "round", "rectangle"],
       table_status: ["free", "occupied", "reserved", "cleaning"],
     },
