@@ -10,6 +10,7 @@ import {
   Clock,
   ChefHat,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -164,27 +165,81 @@ function Dashboard() {
         />
       </div>
 
-      <div className="surface-card p-6">
-        <h2 className="font-semibold mb-4">Ventas — últimos 7 días</h2>
-        <div className="h-72">
-          <ResponsiveContainer>
-            <BarChart data={data?.chart ?? []}>
-              <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" />
-              <XAxis dataKey="d" stroke="var(--color-muted-foreground)" fontSize={12} />
-              <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--color-card)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                }}
-                formatter={(v: number) => money(v)}
-              />
-              <Bar dataKey="total" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="surface-card p-6 xl:col-span-2">
+          <h2 className="font-semibold mb-4">Ventas — últimos 7 días</h2>
+          <div className="h-72">
+            <ResponsiveContainer>
+              <BarChart data={data?.chart ?? []}>
+                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" />
+                <XAxis dataKey="d" stroke="var(--color-muted-foreground)" fontSize={12} />
+                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 8,
+                  }}
+                  formatter={(v: number) => money(v)}
+                />
+                <Bar dataKey="total" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+        <LowStockCard />
       </div>
+    </div>
+  );
+}
+
+function LowStockCard() {
+  const { data: rows = [] } = useQuery({
+    queryKey: ["low-stock"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ingredients")
+        .select("id, name, stock, min_stock, unit")
+        .order("name");
+      return (data ?? []).filter(
+        (r: any) => Number(r.stock ?? 0) <= Number(r.min_stock ?? 0),
+      ) as { id: string; name: string; stock: number; min_stock: number; unit: string }[];
+    },
+  });
+
+  return (
+    <div className="surface-card p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <AlertTriangle className="w-4 h-4 text-warning" />
+        <h2 className="font-semibold">Alertas de stock</h2>
+        <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-warning/20 text-warning font-semibold">
+          {rows.length}
+        </span>
+      </div>
+      {rows.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-8 text-center">
+          Todos los ingredientes están por encima del mínimo.
+        </div>
+      ) : (
+        <ul className="space-y-2 max-h-72 overflow-auto">
+          {rows.map((r) => (
+            <li
+              key={r.id}
+              className="flex items-center justify-between p-2 rounded-md bg-muted/40"
+            >
+              <div>
+                <div className="font-medium text-sm">{r.name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Mínimo: {Number(r.min_stock)} {r.unit}
+                </div>
+              </div>
+              <div className="text-sm font-bold text-destructive">
+                {Number(r.stock)} {r.unit}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

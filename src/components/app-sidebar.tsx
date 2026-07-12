@@ -6,6 +6,7 @@ import {
   ChefHat,
   UtensilsCrossed,
   Carrot,
+  Truck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +26,7 @@ const items = [
   { title: "Mesas", url: "/mesas", icon: Grid3x3 },
   { title: "Carta", url: "/carta", icon: BookOpen },
   { title: "Ingredientes", url: "/ingredientes", icon: Carrot },
+  { title: "Compras", url: "/compras", icon: Truck },
   { title: "Cocina", url: "/cocina", icon: ChefHat },
 ];
 
