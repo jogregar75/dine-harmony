@@ -375,7 +375,251 @@ function PedidoPage() {
           </div>
         </div>
       </aside>
+
+      {modItem && (
+        <ModifiersDialog
+          item={modItem}
+          onClose={() => setModItem(null)}
+        />
+      )}
     </div>
+  );
+}
+
+type Unit = "g" | "kg" | "ml" | "l" | "u";
+type RecipeIng = {
+  ingredient_id: string;
+  optional: boolean;
+  ingredients: { id: string; name: string; unit: Unit } | null;
+};
+type ModRow = {
+  id: string;
+  ingredient_id: string;
+  action: "exclude" | "extra";
+  qty: number;
+  unit: Unit | null;
+  price_delta: number;
+};
+
+function ModifiersDialog({ item, onClose }: { item: OrderItem; onClose: () => void }) {
+  const qc = useQueryClient();
+
+  const { data: recipe = [] } = useQuery({
+    queryKey: ["recipe", item.product_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_ingredients")
+        .select("ingredient_id, optional, ingredients(id, name, unit)")
+        .eq("product_id", item.product_id);
+      return (data ?? []) as unknown as RecipeIng[];
+    },
+  });
+
+  const { data: allIngredients = [] } = useQuery({
+    queryKey: ["ings-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("ingredients").select("id, name, unit").order("name");
+      return (data ?? []) as { id: string; name: string; unit: Unit }[];
+    },
+  });
+
+  const { data: mods = [], refetch } = useQuery({
+    queryKey: ["mods", item.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("order_item_modifiers")
+        .select("*")
+        .eq("order_item_id", item.id);
+      return (data ?? []) as ModRow[];
+    },
+  });
+
+  const excluded = new Set(
+    mods.filter((m) => m.action === "exclude").map((m) => m.ingredient_id),
+  );
+  const extras = mods.filter((m) => m.action === "extra");
+
+  async function toggleExclude(ingredientId: string, checked: boolean) {
+    if (checked) {
+      // marcar como incluido => borrar exclusión
+      await (supabase as any)
+        .from("order_item_modifiers")
+        .delete()
+        .eq("order_item_id", item.id)
+        .eq("ingredient_id", ingredientId)
+        .eq("action", "exclude");
+    } else {
+      await (supabase as any).from("order_item_modifiers").insert({
+        order_item_id: item.id,
+        ingredient_id: ingredientId,
+        action: "exclude",
+        qty: 0,
+        price_delta: 0,
+      });
+    }
+    refetch();
+    qc.invalidateQueries({ queryKey: ["order-items", item.order_id] });
+  }
+
+  async function addExtra() {
+    if (!allIngredients.length) return;
+    const ing = allIngredients[0];
+    await (supabase as any).from("order_item_modifiers").insert({
+      order_item_id: item.id,
+      ingredient_id: ing.id,
+      action: "extra",
+      qty: 1,
+      unit: ing.unit,
+      price_delta: 0,
+    });
+    refetch();
+    qc.invalidateQueries({ queryKey: ["order-items", item.order_id] });
+  }
+
+  async function updateExtra(id: string, patch: Partial<ModRow>) {
+    await (supabase as any).from("order_item_modifiers").update(patch).eq("id", id);
+    refetch();
+    qc.invalidateQueries({ queryKey: ["order-items", item.order_id] });
+  }
+
+  async function removeExtra(id: string) {
+    await (supabase as any).from("order_item_modifiers").delete().eq("id", id);
+    refetch();
+    qc.invalidateQueries({ queryKey: ["order-items", item.order_id] });
+  }
+
+  const UNITS: Unit[] = ["g", "kg", "ml", "l", "u"];
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Modificar «{item.product_name}»</DialogTitle>
+        </DialogHeader>
+
+        <div>
+          <div className="text-xs uppercase text-muted-foreground mb-2">
+            Ingredientes de la receta
+          </div>
+          {recipe.length === 0 && (
+            <div className="text-sm text-muted-foreground py-4">
+              Este producto no tiene receta cargada.
+            </div>
+          )}
+          <div className="space-y-1 max-h-56 overflow-auto">
+            {recipe.map((r) => {
+              if (!r.ingredients) return null;
+              const included = !excluded.has(r.ingredient_id);
+              return (
+                <label
+                  key={r.ingredient_id}
+                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/40 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={included}
+                    onCheckedChange={(v) => toggleExclude(r.ingredient_id, !!v)}
+                  />
+                  <span className={included ? "" : "line-through text-muted-foreground"}>
+                    {r.ingredients.name}
+                  </span>
+                  {r.optional && (
+                    <span className="text-[10px] text-muted-foreground uppercase">
+                      opcional
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs uppercase text-muted-foreground">Extras</div>
+            <Button size="sm" variant="outline" onClick={addExtra}>
+              <Plus className="w-3 h-3" />
+              Agregar
+            </Button>
+          </div>
+          <div className="space-y-2 max-h-56 overflow-auto">
+            {extras.length === 0 && (
+              <div className="text-xs text-muted-foreground text-center py-3">
+                Sin extras.
+              </div>
+            )}
+            {extras.map((m) => (
+              <div key={m.id} className="grid grid-cols-12 gap-2 items-center">
+                <Select
+                  value={m.ingredient_id}
+                  onValueChange={(v) => {
+                    const ing = allIngredients.find((i) => i.id === v);
+                    updateExtra(m.id, {
+                      ingredient_id: v,
+                      unit: ing?.unit ?? m.unit,
+                    });
+                  }}
+                >
+                  <SelectTrigger className="col-span-5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allIngredients.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>
+                        {i.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  className="col-span-2"
+                  type="number"
+                  step="0.001"
+                  value={m.qty}
+                  onChange={(e) => updateExtra(m.id, { qty: Number(e.target.value) })}
+                />
+                <Select
+                  value={m.unit ?? "u"}
+                  onValueChange={(v) => updateExtra(m.id, { unit: v as Unit })}
+                >
+                  <SelectTrigger className="col-span-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNITS.map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {u}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  className="col-span-2"
+                  type="number"
+                  step="0.01"
+                  placeholder="$"
+                  value={m.price_delta}
+                  onChange={(e) =>
+                    updateExtra(m.id, { price_delta: Number(e.target.value) })
+                  }
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeExtra(m.id)}
+                  className="col-span-1"
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>Listo</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
