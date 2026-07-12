@@ -311,34 +311,48 @@ function PedidoPage() {
                 Todavía no hay ítems.
               </div>
             )}
-            {items.map((i) => (
-              <div
-                key={i.id}
-                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/40"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{i.product_name}</div>
-                  <div className="text-[11px] text-muted-foreground uppercase">
-                    {i.status === "pending" ? "Nuevo" : i.status}
+            {items.map((i) => {
+              const lineTotal =
+                Number(i.qty) * Number(i.unit_price) + Number(i.modifiers_total ?? 0);
+              return (
+                <div
+                  key={i.id}
+                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/40"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{i.product_name}</div>
+                    <div className="text-[11px] text-muted-foreground uppercase">
+                      {i.status === "pending" ? "Nuevo" : i.status}
+                      {Number(i.modifiers_total ?? 0) !== 0 &&
+                        ` · mod ${money(i.modifiers_total)}`}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => updateQty(i, -1)}>
-                    <Minus className="w-3 h-3" />
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => updateQty(i, -1)}>
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="w-6 text-center font-semibold">{Number(i.qty)}</span>
+                    <Button size="icon" variant="ghost" onClick={() => updateQty(i, 1)}>
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <div className="w-20 text-right font-semibold text-sm">
+                    {money(lineTotal)}
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title="Modificadores"
+                    onClick={() => setModItem(i)}
+                  >
+                    <SlidersHorizontal className="w-3 h-3 text-primary" />
                   </Button>
-                  <span className="w-6 text-center font-semibold">{Number(i.qty)}</span>
-                  <Button size="icon" variant="ghost" onClick={() => updateQty(i, 1)}>
-                    <Plus className="w-3 h-3" />
+                  <Button size="icon" variant="ghost" onClick={() => removeItem(i.id)}>
+                    <Trash2 className="w-3 h-3 text-destructive" />
                   </Button>
                 </div>
-                <div className="w-20 text-right font-semibold text-sm">
-                  {money(Number(i.qty) * Number(i.unit_price))}
-                </div>
-                <Button size="icon" variant="ghost" onClick={() => removeItem(i.id)}>
-                  <Trash2 className="w-3 h-3 text-destructive" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </ScrollArea>
         <div className="p-4 border-t border-border space-y-2">
