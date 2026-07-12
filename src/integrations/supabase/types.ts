@@ -124,11 +124,63 @@ export type Database = {
           },
         ]
       }
+      order_item_modifiers: {
+        Row: {
+          action: Database["public"]["Enums"]["modifier_action"]
+          created_at: string
+          id: string
+          ingredient_id: string
+          order_item_id: string
+          price_delta: number
+          qty: number
+          unit: Database["public"]["Enums"]["ingredient_unit"] | null
+          updated_at: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["modifier_action"]
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          order_item_id: string
+          price_delta?: number
+          qty?: number
+          unit?: Database["public"]["Enums"]["ingredient_unit"] | null
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["modifier_action"]
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          order_item_id?: string
+          price_delta?: number
+          qty?: number
+          unit?: Database["public"]["Enums"]["ingredient_unit"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_modifiers_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_modifiers_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
           delivered_at: string | null
           id: string
+          modifiers_total: number
           notes: string | null
           order_id: string
           product_id: string
@@ -145,6 +197,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           id?: string
+          modifiers_total?: number
           notes?: string | null
           order_id: string
           product_id: string
@@ -161,6 +214,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           id?: string
+          modifiers_total?: number
           notes?: string | null
           order_id?: string
           product_id?: string
@@ -374,6 +428,95 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_items: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          purchase_id: string
+          qty: number
+          unit: Database["public"]["Enums"]["ingredient_unit"]
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          purchase_id: string
+          qty: number
+          unit: Database["public"]["Enums"]["ingredient_unit"]
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          purchase_id?: string
+          qty?: number
+          unit?: Database["public"]["Enums"]["ingredient_unit"]
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          purchase_date: string
+          status: Database["public"]["Enums"]["purchase_status"]
+          supplier_id: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          status?: Database["public"]["Enums"]["purchase_status"]
+          supplier_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          status?: Database["public"]["Enums"]["purchase_status"]
+          supplier_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_tables: {
         Row: {
           created_at: string
@@ -545,8 +688,10 @@ export type Database = {
       app_role: "admin" | "encargado" | "mozo" | "caja" | "cocina"
       ingredient_unit: "g" | "kg" | "ml" | "l" | "u"
       item_status: "pending" | "preparing" | "ready" | "delivered" | "cancelled"
+      modifier_action: "exclude" | "extra"
       order_status: "open" | "sent" | "paid" | "cancelled"
       order_type: "dine_in" | "takeaway" | "delivery"
+      purchase_status: "draft" | "received" | "cancelled"
       stock_movement_type: "sale" | "purchase" | "adjustment" | "return"
       table_shape: "square" | "round" | "rectangle"
       table_status: "free" | "occupied" | "reserved" | "cleaning"
@@ -680,8 +825,10 @@ export const Constants = {
       app_role: ["admin", "encargado", "mozo", "caja", "cocina"],
       ingredient_unit: ["g", "kg", "ml", "l", "u"],
       item_status: ["pending", "preparing", "ready", "delivered", "cancelled"],
+      modifier_action: ["exclude", "extra"],
       order_status: ["open", "sent", "paid", "cancelled"],
       order_type: ["dine_in", "takeaway", "delivery"],
+      purchase_status: ["draft", "received", "cancelled"],
       stock_movement_type: ["sale", "purchase", "adjustment", "return"],
       table_shape: ["square", "round", "rectangle"],
       table_status: ["free", "occupied", "reserved", "cleaning"],
