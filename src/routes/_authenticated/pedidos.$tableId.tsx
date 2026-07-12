@@ -76,6 +76,7 @@ function PedidoPage() {
   const qc = useQueryClient();
   const [activeCat, setActiveCat] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
+  const [modItem, setModItem] = useState<OrderItem | null>(null);
 
   const { data: table } = useQuery({
     queryKey: ["table", tableId],
