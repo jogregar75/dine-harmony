@@ -7,6 +7,8 @@ import {
   UtensilsCrossed,
   Carrot,
   Truck,
+  Wallet,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +30,8 @@ const items = [
   { title: "Ingredientes", url: "/ingredientes", icon: Carrot },
   { title: "Compras", url: "/compras", icon: Truck },
   { title: "Cocina", url: "/cocina", icon: ChefHat },
+  { title: "Caja", url: "/caja", icon: Wallet },
+  { title: "Clientes", url: "/clientes", icon: Users },
 ];
 
 export function AppSidebar() {

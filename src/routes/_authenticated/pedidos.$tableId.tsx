@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -29,9 +30,14 @@ import {
   CreditCard,
   X,
   SlidersHorizontal,
+  UserPlus,
+  Split,
+  ArrowLeftRight,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { money } from "@/lib/format";
+
 
 export const Route = createFileRoute("/_authenticated/pedidos/$tableId")({
   head: () => ({ meta: [{ title: "Pedido — GastroPOS" }] }),
@@ -68,6 +74,7 @@ type Order = {
   subtotal: number;
   tax: number;
   total: number;
+  customer_id: string | null;
 };
 
 function PedidoPage() {
@@ -77,6 +84,12 @@ function PedidoPage() {
   const [activeCat, setActiveCat] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
   const [modItem, setModItem] = useState<OrderItem | null>(null);
+  const [payDlg, setPayDlg] = useState(false);
+  const [customerDlg, setCustomerDlg] = useState(false);
+  const [splitDlg, setSplitDlg] = useState(false);
+  const [transferDlg, setTransferDlg] = useState(false);
+
+
 
   const { data: table } = useQuery({
     queryKey: ["table", tableId],
@@ -207,16 +220,12 @@ function PedidoPage() {
     toast.success(`${pending.length} ítem(s) enviados a cocina`);
   }
 
-  async function payAndClose() {
+  function openPay() {
     if (!order) return;
-    await supabase
-      .from("orders")
-      .update({ status: "paid", closed_at: new Date().toISOString() })
-      .eq("id", order.id);
-    await supabase.from("restaurant_tables").update({ status: "free" }).eq("id", tableId);
-    toast.success("Cuenta cerrada");
-    navigate({ to: "/mesas" });
+    if (Number(order.total ?? 0) <= 0) return toast.info("Nada para cobrar");
+    setPayDlg(true);
   }
+
 
   async function cancelOrder() {
     if (!order) return;
@@ -306,9 +315,25 @@ function PedidoPage() {
 
       {/* Cuenta */}
       <aside className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card/40 flex flex-col">
-        <div className="p-4 border-b border-border">
-          <div className="text-xs uppercase text-muted-foreground tracking-wider">Cuenta</div>
-          <div className="text-lg font-semibold">Mesa {table?.number}</div>
+        <div className="p-4 border-b border-border space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground tracking-wider">Cuenta</div>
+              <div className="text-lg font-semibold">Mesa {table?.number}</div>
+            </div>
+            <div className="flex gap-1">
+              <Button size="icon" variant="ghost" title="Cliente" onClick={() => setCustomerDlg(true)}>
+                {order?.customer_id ? <User className="w-4 h-4 text-primary" /> : <UserPlus className="w-4 h-4" />}
+              </Button>
+              <Button size="icon" variant="ghost" title="Dividir cuenta" onClick={() => setSplitDlg(true)}>
+                <Split className="w-4 h-4" />
+              </Button>
+              <Button size="icon" variant="ghost" title="Transferir / unir" onClick={() => setTransferDlg(true)}>
+                <ArrowLeftRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          {order?.customer_id && <CustomerBadge customerId={order.customer_id} />}
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-2">
@@ -370,7 +395,7 @@ function PedidoPage() {
               <Send className="w-4 h-4" />
               Enviar
             </Button>
-            <Button onClick={payAndClose}>
+            <Button onClick={openPay}>
               <CreditCard className="w-4 h-4" />
               Cobrar
             </Button>
@@ -388,8 +413,41 @@ function PedidoPage() {
           onClose={() => setModItem(null)}
         />
       )}
+      {order && (
+        <PayDialog
+          open={payDlg}
+          onClose={() => setPayDlg(false)}
+          order={order}
+          onPaid={() => navigate({ to: "/mesas" })}
+        />
+      )}
+      {order && (
+        <CustomerDialog
+          open={customerDlg}
+          onClose={() => setCustomerDlg(false)}
+          orderId={order.id}
+          currentId={order.customer_id}
+        />
+      )}
+      {order && (
+        <SplitDialog
+          open={splitDlg}
+          onClose={() => setSplitDlg(false)}
+          orderId={order.id}
+          items={items}
+        />
+      )}
+      {order && table && (
+        <TransferDialog
+          open={transferDlg}
+          onClose={() => setTransferDlg(false)}
+          fromTableId={table.id}
+          onDone={() => navigate({ to: "/mesas" })}
+        />
+      )}
     </div>
   );
+
 }
 
 type Unit = "g" | "kg" | "ml" | "l" | "u";
@@ -642,3 +700,315 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
     </div>
   );
 }
+
+// ============ Customer badge ============
+function CustomerBadge({ customerId }: { customerId: string }) {
+  const { data } = useQuery({
+    queryKey: ["customer", customerId],
+    queryFn: async () => {
+      const { data } = await supabase.from("customers").select("name, points").eq("id", customerId).maybeSingle();
+      return data;
+    },
+  });
+  if (!data) return null;
+  return (
+    <div className="text-xs bg-primary/10 border border-primary/30 rounded-md px-2 py-1 flex items-center gap-2">
+      <User className="w-3 h-3 text-primary" />
+      <span className="font-medium">{data.name}</span>
+      <span className="text-muted-foreground ml-auto">{data.points} pts</span>
+    </div>
+  );
+}
+
+// ============ Customer picker ============
+function CustomerDialog({
+  open, onClose, orderId, currentId,
+}: { open: boolean; onClose: () => void; orderId: string; currentId: string | null }) {
+  const qc = useQueryClient();
+  const [q, setQ] = useState("");
+  const { data: customers = [] } = useQuery({
+    queryKey: ["customers-pick"],
+    queryFn: async () => {
+      const { data } = await supabase.from("customers").select("id, name, phone, points").eq("active", true).order("name");
+      return data ?? [];
+    },
+  });
+  const filtered = customers.filter((c) =>
+    !q || c.name.toLowerCase().includes(q.toLowerCase()) || (c.phone ?? "").includes(q));
+
+  async function assign(id: string | null) {
+    const { error } = await supabase.from("orders").update({ customer_id: id }).eq("id", orderId);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["order-for-table"] });
+    toast.success(id ? "Cliente asignado" : "Cliente removido");
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Asignar cliente</DialogTitle></DialogHeader>
+        <Input placeholder="Buscar por nombre o teléfono" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="max-h-[300px] overflow-auto divide-y divide-border">
+          {filtered.map((c) => (
+            <button key={c.id}
+              onClick={() => assign(c.id)}
+              className={"w-full text-left p-2 hover:bg-muted/60 flex items-center justify-between " +
+                (c.id === currentId ? "bg-primary/10" : "")}>
+              <div>
+                <div className="text-sm font-medium">{c.name}</div>
+                <div className="text-[11px] text-muted-foreground">{c.phone ?? "—"}</div>
+              </div>
+              <div className="text-xs text-accent font-semibold">{c.points} pts</div>
+            </button>
+          ))}
+          {filtered.length === 0 && <div className="p-4 text-sm text-muted-foreground text-center">Sin resultados</div>}
+        </div>
+        <DialogFooter>
+          {currentId && <Button variant="outline" onClick={() => assign(null)}>Quitar cliente</Button>}
+          <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ Pay dialog ============
+const METHOD_LABEL_ES: Record<string, string> = {
+  cash: "Efectivo", debit: "Débito", credit: "Crédito",
+  transfer: "Transferencia", mp_qr: "MP / QR", other: "Otro",
+};
+
+function PayDialog({
+  open, onClose, order, onPaid,
+}: { open: boolean; onClose: () => void; order: Order; onPaid: () => void }) {
+  const qc = useQueryClient();
+  const [method, setMethod] = useState<"cash" | "debit" | "credit" | "transfer" | "mp_qr" | "other">("cash");
+  const [amount, setAmount] = useState("");
+  const [reference, setReference] = useState("");
+
+  const { data: payments = [], refetch } = useQuery({
+    queryKey: ["order-payments", order.id],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase.from("payments").select("*").eq("order_id", order.id).order("created_at");
+      return data ?? [];
+    },
+  });
+
+  const paid = payments.reduce((s, p) => s + Number(p.amount), 0);
+  const remaining = Math.max(0, Number(order.total) - paid);
+
+  useEffect(() => { if (open) setAmount(remaining.toFixed(2)); }, [open, remaining]);
+
+  async function pay() {
+    const a = Number(amount);
+    if (isNaN(a) || a <= 0) return toast.error("Monto inválido");
+    const { data: reg } = await supabase.from("cash_registers").select("id").eq("status", "open").maybeSingle();
+    if (!reg) return toast.error("No hay caja abierta");
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase.from("payments").insert({
+      order_id: order.id, method, amount: a,
+      reference: reference || null, register_id: reg.id, created_by: u.user?.id,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Pago registrado");
+    setReference("");
+    refetch();
+    // Verificar si quedó pagado
+    const newPaid = paid + a;
+    if (newPaid >= Number(order.total)) {
+      await supabase.from("restaurant_tables").update({ status: "free" }).eq("id", order.table_id);
+      qc.invalidateQueries({ queryKey: ["tables"] });
+      onClose();
+      onPaid();
+    }
+  }
+
+  async function removePayment(id: string) {
+    if (!confirm("¿Eliminar este pago?")) return;
+    await supabase.from("payments").delete().eq("id", id);
+    refetch();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Cobrar pedido</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="surface-card p-2">
+            <div className="text-[10px] uppercase text-muted-foreground">Total</div>
+            <div className="font-bold">{money(Number(order.total))}</div>
+          </div>
+          <div className="surface-card p-2">
+            <div className="text-[10px] uppercase text-muted-foreground">Pagado</div>
+            <div className="font-bold text-success">{money(paid)}</div>
+          </div>
+          <div className="surface-card p-2 border-primary/40">
+            <div className="text-[10px] uppercase text-muted-foreground">Resta</div>
+            <div className="font-bold text-primary">{money(remaining)}</div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <Label>Medio de pago</Label>
+            <Select value={method} onValueChange={(v) => setMethod(v as typeof method)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(METHOD_LABEL_ES).map(([v, l]) => (
+                  <SelectItem key={v} value={v}>{l}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Monto</Label>
+              <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            </div>
+            <div>
+              <Label>Referencia (opcional)</Label>
+              <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Últ. 4 tarjeta / N° operación" />
+            </div>
+          </div>
+          <Button className="w-full" onClick={pay} disabled={remaining <= 0}>
+            <CreditCard className="w-4 h-4" /> Cobrar {money(Number(amount || 0))}
+          </Button>
+        </div>
+
+        {payments.length > 0 && (
+          <div className="border-t border-border pt-3">
+            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Pagos</div>
+            <div className="space-y-1 max-h-[160px] overflow-auto">
+              {payments.map((p) => (
+                <div key={p.id} className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1">
+                  <span>{METHOD_LABEL_ES[p.method] ?? p.method}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{money(Number(p.amount))}</span>
+                    <Button size="icon" variant="ghost" onClick={() => removePayment(p.id)}>
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cerrar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ Split dialog ============
+function SplitDialog({
+  open, onClose, orderId, items,
+}: { open: boolean; onClose: () => void; orderId: string; items: OrderItem[] }) {
+  const qc = useQueryClient();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => { if (open) setSelected(new Set()); }, [open]);
+
+  function toggle(id: string) {
+    const n = new Set(selected);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    setSelected(n);
+  }
+
+  async function submit() {
+    if (selected.size === 0) return toast.error("Elegí al menos un ítem");
+    const { error } = await supabase.rpc("split_order", {
+      _order_id: orderId, _item_ids: Array.from(selected),
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Cuenta dividida — nuevo pedido creado en la misma mesa");
+    qc.invalidateQueries({ queryKey: ["order-items"] });
+    qc.invalidateQueries({ queryKey: ["order-for-table"] });
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Dividir cuenta</DialogTitle></DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Los ítems seleccionados se moverán a una nueva cuenta en la misma mesa.
+        </p>
+        <div className="max-h-[300px] overflow-auto divide-y divide-border">
+          {items.filter((i) => i.status !== "cancelled").map((i) => (
+            <label key={i.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/40">
+              <Checkbox checked={selected.has(i.id)} onCheckedChange={() => toggle(i.id)} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm truncate">{i.product_name}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {Number(i.qty)} × {money(Number(i.unit_price))}
+                </div>
+              </div>
+              <div className="font-semibold text-sm">
+                {money(Number(i.qty) * Number(i.unit_price) + Number(i.modifiers_total ?? 0))}
+              </div>
+            </label>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={submit}><Split className="w-4 h-4" /> Dividir ({selected.size})</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ Transfer dialog ============
+function TransferDialog({
+  open, onClose, fromTableId, onDone,
+}: { open: boolean; onClose: () => void; fromTableId: string; onDone: () => void }) {
+  const [target, setTarget] = useState<string>("");
+  const { data: tables = [] } = useQuery({
+    queryKey: ["all-tables"],
+    queryFn: async () => {
+      const { data } = await supabase.from("restaurant_tables").select("id, number, status").order("number");
+      return data ?? [];
+    },
+  });
+  const options = tables.filter((t) => t.id !== fromTableId);
+
+  async function submit() {
+    if (!target) return toast.error("Elegí una mesa destino");
+    const { error } = await supabase.rpc("transfer_order", { _from_table: fromTableId, _to_table: target });
+    if (error) return toast.error(error.message);
+    toast.success("Pedido transferido");
+    onClose();
+    onDone();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Transferir o unir mesa</DialogTitle></DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Si la mesa destino ya tiene un pedido activo, se unen ambos.
+        </p>
+        <Select value={target} onValueChange={setTarget}>
+          <SelectTrigger><SelectValue placeholder="Elegir mesa…" /></SelectTrigger>
+          <SelectContent>
+            {options.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                Mesa {t.number} · {t.status === "occupied" ? "Ocupada (se unirá)" : "Libre"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={submit}><ArrowLeftRight className="w-4 h-4" /> Transferir</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
