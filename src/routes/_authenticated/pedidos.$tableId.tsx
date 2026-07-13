@@ -314,9 +314,25 @@ function PedidoPage() {
 
       {/* Cuenta */}
       <aside className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card/40 flex flex-col">
-        <div className="p-4 border-b border-border">
-          <div className="text-xs uppercase text-muted-foreground tracking-wider">Cuenta</div>
-          <div className="text-lg font-semibold">Mesa {table?.number}</div>
+        <div className="p-4 border-b border-border space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground tracking-wider">Cuenta</div>
+              <div className="text-lg font-semibold">Mesa {table?.number}</div>
+            </div>
+            <div className="flex gap-1">
+              <Button size="icon" variant="ghost" title="Cliente" onClick={() => setCustomerDlg(true)}>
+                {order?.customer_id ? <User className="w-4 h-4 text-primary" /> : <UserPlus className="w-4 h-4" />}
+              </Button>
+              <Button size="icon" variant="ghost" title="Dividir cuenta" onClick={() => setSplitDlg(true)}>
+                <Split className="w-4 h-4" />
+              </Button>
+              <Button size="icon" variant="ghost" title="Transferir / unir" onClick={() => setTransferDlg(true)}>
+                <ArrowLeftRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          {order?.customer_id && <CustomerBadge customerId={order.customer_id} />}
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-2">
@@ -378,7 +394,7 @@ function PedidoPage() {
               <Send className="w-4 h-4" />
               Enviar
             </Button>
-            <Button onClick={payAndClose}>
+            <Button onClick={openPay}>
               <CreditCard className="w-4 h-4" />
               Cobrar
             </Button>
@@ -396,8 +412,41 @@ function PedidoPage() {
           onClose={() => setModItem(null)}
         />
       )}
+      {order && (
+        <PayDialog
+          open={payDlg}
+          onClose={() => setPayDlg(false)}
+          order={order}
+          onPaid={() => navigate({ to: "/mesas" })}
+        />
+      )}
+      {order && (
+        <CustomerDialog
+          open={customerDlg}
+          onClose={() => setCustomerDlg(false)}
+          orderId={order.id}
+          currentId={order.customer_id}
+        />
+      )}
+      {order && (
+        <SplitDialog
+          open={splitDlg}
+          onClose={() => setSplitDlg(false)}
+          orderId={order.id}
+          items={items}
+        />
+      )}
+      {order && table && (
+        <TransferDialog
+          open={transferDlg}
+          onClose={() => setTransferDlg(false)}
+          fromTableId={table.id}
+          onDone={() => navigate({ to: "/mesas" })}
+        />
+      )}
     </div>
   );
+
 }
 
 type Unit = "g" | "kg" | "ml" | "l" | "u";
