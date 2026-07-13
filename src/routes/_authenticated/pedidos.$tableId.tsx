@@ -220,6 +220,12 @@ function PedidoPage() {
 
   async function cancelOrder() {
     if (!order) return;
+    // Cancelar ítems activos para que salgan de cocina (y disparen devolución de stock si ya estaban entregados)
+    await supabase
+      .from("order_items")
+      .update({ status: "cancelled" })
+      .eq("order_id", order.id)
+      .in("status", ["pending", "preparing", "ready", "delivered"]);
     await supabase
       .from("orders")
       .update({ status: "cancelled", closed_at: new Date().toISOString() })
