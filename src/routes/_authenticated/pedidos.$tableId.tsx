@@ -29,9 +29,14 @@ import {
   CreditCard,
   X,
   SlidersHorizontal,
+  UserPlus,
+  Split,
+  ArrowLeftRight,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { money } from "@/lib/format";
+
 
 export const Route = createFileRoute("/_authenticated/pedidos/$tableId")({
   head: () => ({ meta: [{ title: "Pedido — GastroPOS" }] }),
