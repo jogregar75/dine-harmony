@@ -44,6 +44,92 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_movements: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          direction: string
+          id: string
+          reason: string | null
+          register_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          direction: string
+          id?: string
+          reason?: string | null
+          register_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          id?: string
+          reason?: string | null
+          register_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_registers: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_amount: number | null
+          created_at: string
+          difference: number | null
+          expected_amount: number | null
+          id: string
+          notes: string | null
+          opened_at: string
+          opened_by: string | null
+          opening_amount: number
+          status: Database["public"]["Enums"]["register_status"]
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          created_at?: string
+          difference?: number | null
+          expected_amount?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          opening_amount?: number
+          status?: Database["public"]["Enums"]["register_status"]
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          created_at?: string
+          difference?: number | null
+          expected_amount?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          opening_amount?: number
+          status?: Database["public"]["Enums"]["register_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           active: boolean
@@ -74,6 +160,51 @@ export type Database = {
           name?: string
           sort_order?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          active: boolean
+          created_at: string
+          document: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          points: number
+          total_spent: number
+          updated_at: string
+          visits: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          points?: number
+          total_spent?: number
+          updated_at?: string
+          visits?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          points?: number
+          total_spent?: number
+          updated_at?: string
+          visits?: number
         }
         Relationships: []
       }
@@ -249,6 +380,7 @@ export type Database = {
           closed_at: string | null
           code: number
           created_at: string
+          customer_id: string | null
           id: string
           notes: string | null
           opened_at: string
@@ -265,6 +397,7 @@ export type Database = {
           closed_at?: string | null
           code?: number
           created_at?: string
+          customer_id?: string | null
           id?: string
           notes?: string | null
           opened_at?: string
@@ -281,6 +414,7 @@ export type Database = {
           closed_at?: string | null
           code?: number
           created_at?: string
+          customer_id?: string | null
           id?: string
           notes?: string | null
           opened_at?: string
@@ -295,10 +429,65 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_table_id_fkey"
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "restaurant_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          order_id: string
+          reference: string | null
+          register_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method: Database["public"]["Enums"]["payment_method"]
+          order_id: string
+          reference?: string | null
+          register_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          order_id?: string
+          reference?: string | null
+          register_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
             referencedColumns: ["id"]
           },
         ]
@@ -667,6 +856,30 @@ export type Database = {
         Args: { _item_id: string; _qty: number; _reverse: boolean }
         Returns: undefined
       }
+      close_cash_register: {
+        Args: { _closing: number; _id: string; _notes?: string }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_amount: number | null
+          created_at: string
+          difference: number | null
+          expected_amount: number | null
+          id: string
+          notes: string | null
+          opened_at: string
+          opened_by: string | null
+          opening_amount: number
+          status: Database["public"]["Enums"]["register_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "cash_registers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       convert_unit: {
         Args: {
           _from: Database["public"]["Enums"]["ingredient_unit"]
@@ -675,6 +888,7 @@ export type Database = {
         }
         Returns: number
       }
+      current_open_register: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -683,6 +897,14 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      split_order: {
+        Args: { _item_ids: string[]; _order_id: string }
+        Returns: string
+      }
+      transfer_order: {
+        Args: { _from_table: string; _to_table: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "encargado" | "mozo" | "caja" | "cocina"
@@ -691,7 +913,15 @@ export type Database = {
       modifier_action: "exclude" | "extra"
       order_status: "open" | "sent" | "paid" | "cancelled"
       order_type: "dine_in" | "takeaway" | "delivery"
+      payment_method:
+        | "cash"
+        | "debit"
+        | "credit"
+        | "transfer"
+        | "mp_qr"
+        | "other"
       purchase_status: "draft" | "received" | "cancelled"
+      register_status: "open" | "closed"
       stock_movement_type: "sale" | "purchase" | "adjustment" | "return"
       table_shape: "square" | "round" | "rectangle"
       table_status: "free" | "occupied" | "reserved" | "cleaning"
@@ -828,7 +1058,9 @@ export const Constants = {
       modifier_action: ["exclude", "extra"],
       order_status: ["open", "sent", "paid", "cancelled"],
       order_type: ["dine_in", "takeaway", "delivery"],
+      payment_method: ["cash", "debit", "credit", "transfer", "mp_qr", "other"],
       purchase_status: ["draft", "received", "cancelled"],
+      register_status: ["open", "closed"],
       stock_movement_type: ["sale", "purchase", "adjustment", "return"],
       table_shape: ["square", "round", "rectangle"],
       table_status: ["free", "occupied", "reserved", "cleaning"],
