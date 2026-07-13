@@ -337,7 +337,7 @@ function CloseDialog({
     const closing = Number(counted);
     if (isNaN(closing) || closing < 0) return toast.error("Monto inválido");
     const { error } = await supabase.rpc("close_cash_register", {
-      _id: register.id, _closing: closing, _notes: notes || null,
+      _id: register.id, _closing: closing, _notes: notes || undefined,
     });
     if (error) return toast.error(error.message);
     toast.success("Caja cerrada");
