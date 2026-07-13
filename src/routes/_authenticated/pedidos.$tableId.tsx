@@ -73,6 +73,7 @@ type Order = {
   subtotal: number;
   tax: number;
   total: number;
+  customer_id: string | null;
 };
 
 function PedidoPage() {
@@ -82,6 +83,12 @@ function PedidoPage() {
   const [activeCat, setActiveCat] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
   const [modItem, setModItem] = useState<OrderItem | null>(null);
+  const [payDlg, setPayDlg] = useState(false);
+  const [customerDlg, setCustomerDlg] = useState(false);
+  const [splitDlg, setSplitDlg] = useState(false);
+  const [transferDlg, setTransferDlg] = useState(false);
+
+
 
   const { data: table } = useQuery({
     queryKey: ["table", tableId],
