@@ -219,16 +219,12 @@ function PedidoPage() {
     toast.success(`${pending.length} ítem(s) enviados a cocina`);
   }
 
-  async function payAndClose() {
+  function openPay() {
     if (!order) return;
-    await supabase
-      .from("orders")
-      .update({ status: "paid", closed_at: new Date().toISOString() })
-      .eq("id", order.id);
-    await supabase.from("restaurant_tables").update({ status: "free" }).eq("id", tableId);
-    toast.success("Cuenta cerrada");
-    navigate({ to: "/mesas" });
+    if (Number(order.total ?? 0) <= 0) return toast.info("Nada para cobrar");
+    setPayDlg(true);
   }
+
 
   async function cancelOrder() {
     if (!order) return;
