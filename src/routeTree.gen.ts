@@ -19,6 +19,7 @@ import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCartaRouteImport } from './routes/_authenticated/carta'
+import { Route as AuthenticatedCajaRouteImport } from './routes/_authenticated/caja'
 import { Route as AuthenticatedPedidosTableIdRouteImport } from './routes/_authenticated/pedidos.$tableId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -71,6 +72,11 @@ const AuthenticatedCartaRoute = AuthenticatedCartaRouteImport.update({
   path: '/carta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCajaRoute = AuthenticatedCajaRouteImport.update({
+  id: '/caja',
+  path: '/caja',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPedidosTableIdRoute =
   AuthenticatedPedidosTableIdRouteImport.update({
     id: '/pedidos/$tableId',
@@ -81,6 +87,7 @@ const AuthenticatedPedidosTableIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/caja': typeof AuthenticatedCajaRoute
   '/carta': typeof AuthenticatedCartaRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/cocina': typeof AuthenticatedCocinaRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/caja': typeof AuthenticatedCajaRoute
   '/carta': typeof AuthenticatedCartaRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/cocina': typeof AuthenticatedCocinaRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/caja': typeof AuthenticatedCajaRoute
   '/_authenticated/carta': typeof AuthenticatedCartaRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/caja'
     | '/carta'
     | '/clientes'
     | '/cocina'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/caja'
     | '/carta'
     | '/clientes'
     | '/cocina'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/caja'
     | '/_authenticated/carta'
     | '/_authenticated/clientes'
     | '/_authenticated/cocina'
@@ -234,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCartaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/caja': {
+      id: '/_authenticated/caja'
+      path: '/caja'
+      fullPath: '/caja'
+      preLoaderRoute: typeof AuthenticatedCajaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pedidos/$tableId': {
       id: '/_authenticated/pedidos/$tableId'
       path: '/pedidos/$tableId'
@@ -245,6 +264,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCajaRoute: typeof AuthenticatedCajaRoute
   AuthenticatedCartaRoute: typeof AuthenticatedCartaRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
@@ -256,6 +276,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCajaRoute: AuthenticatedCajaRoute,
   AuthenticatedCartaRoute: AuthenticatedCartaRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
