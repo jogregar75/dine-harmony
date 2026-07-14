@@ -9,6 +9,9 @@ import {
   Truck,
   Wallet,
   Users,
+  BarChart3,
+  Package,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +35,9 @@ const items = [
   { title: "Cocina", url: "/cocina", icon: ChefHat },
   { title: "Caja", url: "/caja", icon: Wallet },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Reportes", url: "/reportes", icon: BarChart3 },
+  { title: "Inventario", url: "/inventario", icon: Package },
+  { title: "Configuración", url: "/configuracion", icon: Settings },
 ];
 
 export function AppSidebar() {

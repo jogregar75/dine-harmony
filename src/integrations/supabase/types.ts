@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          address: string | null
+          created_at: string
+          currency: string
+          default_tax_rate: number
+          id: boolean
+          logo_url: string | null
+          phone: string | null
+          restaurant_name: string
+          tax_id: string | null
+          tip_suggestion: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          currency?: string
+          default_tax_rate?: number
+          id?: boolean
+          logo_url?: string | null
+          phone?: string | null
+          restaurant_name?: string
+          tax_id?: string | null
+          tip_suggestion?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          currency?: string
+          default_tax_rate?: number
+          id?: boolean
+          logo_url?: string | null
+          phone?: string | null
+          restaurant_name?: string
+          tax_id?: string | null
+          tip_suggestion?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
