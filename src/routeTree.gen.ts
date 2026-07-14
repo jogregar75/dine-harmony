@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedMesasRouteImport } from './routes/_authenticated/mesas'
 import { Route as AuthenticatedIngredientesRouteImport } from './routes/_authenticated/ingredientes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMesasRoute = AuthenticatedMesasRouteImport.update({
   id: '/mesas',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/ingredientes': typeof AuthenticatedIngredientesRoute
   '/mesas': typeof AuthenticatedMesasRoute
+  '/reportes': typeof AuthenticatedReportesRoute
   '/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
 export interface FileRoutesByTo {
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/ingredientes': typeof AuthenticatedIngredientesRoute
   '/mesas': typeof AuthenticatedMesasRoute
+  '/reportes': typeof AuthenticatedReportesRoute
   '/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
 export interface FileRoutesById {
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/ingredientes': typeof AuthenticatedIngredientesRoute
   '/_authenticated/mesas': typeof AuthenticatedMesasRoute
+  '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/pedidos/$tableId': typeof AuthenticatedPedidosTableIdRoute
 }
 export interface FileRouteTypes {
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ingredientes'
     | '/mesas'
+    | '/reportes'
     | '/pedidos/$tableId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ingredientes'
     | '/mesas'
+    | '/reportes'
     | '/pedidos/$tableId'
   id:
     | '__root__'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/ingredientes'
     | '/_authenticated/mesas'
+    | '/_authenticated/reportes'
     | '/_authenticated/pedidos/$tableId'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/reportes': {
+      id: '/_authenticated/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof AuthenticatedReportesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mesas': {
       id: '/_authenticated/mesas'
@@ -272,6 +291,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIngredientesRoute: typeof AuthenticatedIngredientesRoute
   AuthenticatedMesasRoute: typeof AuthenticatedMesasRoute
+  AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedPedidosTableIdRoute: typeof AuthenticatedPedidosTableIdRoute
 }
 
@@ -284,6 +304,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIngredientesRoute: AuthenticatedIngredientesRoute,
   AuthenticatedMesasRoute: AuthenticatedMesasRoute,
+  AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedPedidosTableIdRoute: AuthenticatedPedidosTableIdRoute,
 }
 
